@@ -128,6 +128,6 @@ class Template {
   "      <guid>" + permalink + "</guid>",
   "      <pubDate>" + itemDate + "</pubDate>",
   "    </item>"
-          ).collect(joining("\n"));
+    ).collect(joining("\n"));
   }
 }
