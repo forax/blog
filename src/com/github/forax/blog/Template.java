@@ -25,7 +25,7 @@ class Template {
   "      background-size: 1600px auto;",
   "    }",
   "    </style>",
-  "    <link type='text/css' rel='stylesheet' href='styles/shCoreDefault.css'/>",
+  "    <!-- link type='text/css' rel='stylesheet' href='styles/shCoreDefault.css'/ -->",
   "  </head>",
   "  <body class='home blog single-author'>",
   "    <div id='page' class='hfeed site'>",
@@ -43,9 +43,9 @@ class Template {
   "        </div><!-- #primary -->",
   "      </div><!-- #main -->",
   "    </div><!-- #page -->",
-  "    <script type='text/javascript' src='scripts/shCore.js'></script>",
+  "    <!-- script type='text/javascript' src='scripts/shCore.js'></script>",
   "    <script type='text/javascript' src='scripts/shBrushJScript.js'></script>",
-  "    <script type='text/javascript'>SyntaxHighlighter.all();</script>",
+  "    <script type='text/javascript'>SyntaxHighlighter.all();</script -->",
   "  </body>",
   "</html>"
   ).collect(joining("\n"));

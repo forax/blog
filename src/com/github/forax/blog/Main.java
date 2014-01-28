@@ -40,38 +40,6 @@ public class Main {
     PATTERN.splitAsStream(line).<String>map(String::toLowerCase).filter(allTags::contains).forEach(tags::add);
   }
   
-  private static String summary(RootNode root) {
-    StringBuilder builder = new StringBuilder();
-    appendSummary(root, builder);
-    return builder.toString();
-  }
-  private static boolean appendSummary(Node node, StringBuilder builder) {
-    if (node instanceof TextNode) {
-      String text = ((TextNode) node).getText();
-      int index = text.indexOf('.');
-      if (index != - 1) {
-        builder.append(text, 0, index + 1);
-        return true;
-      }
-      builder.append(text);
-      if (builder.length() > 128) {
-        builder.setLength(128);
-        builder.append("...");
-        return true;
-      }
-      builder.append("</br>");
-      return false;
-    }
-    if (node instanceof SuperNode) {
-      for(Node n: ((SuperNode)node).getChildren()) {
-        if (appendSummary(n, builder)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  
   public static void main(String[] args) throws IOException {
     Path posts = get("posts");
     Path site = get("site");
@@ -93,7 +61,7 @@ public class Main {
         
         RootNode root = processor.parseMarkdown(lines(path).peek(line -> populate(line, allTags, tags)).collect(joining("\n")).toCharArray());
         String content = new ToHtmlSerializer(new LinkRenderer(), emptyMap()).toHtml(root);
-        String summary = summary(root);
+        String summary = Summary.summary(root);
         
         String pathname = path.getFileName().toString();
         String filename = pathname.substring(0, pathname.length() - ".md".length());
