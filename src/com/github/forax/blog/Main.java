@@ -1,6 +1,7 @@
 package com.github.forax.blog;
 
-import static com.github.forax.blog.UnsafeIO.unsafeIO;
+import static com.github.forax.blog.UnsafeIO.unsafeProc;
+import static com.github.forax.blog.UnsafeIO.unsafeFun;
 import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.Files.lines;
 import static java.nio.file.Files.walk;
@@ -29,10 +30,7 @@ import java.util.regex.Pattern;
 import org.pegdown.LinkRenderer;
 import org.pegdown.PegDownProcessor;
 import org.pegdown.ToHtmlSerializer;
-import org.pegdown.ast.Node;
 import org.pegdown.ast.RootNode;
-import org.pegdown.ast.SuperNode;
-import org.pegdown.ast.TextNode;
 
 public class Main {
   private static final Pattern PATTERN = Pattern.compile("[^\\w]"); 
@@ -49,16 +47,14 @@ public class Main {
     
     Map<FileTime, Path> markdowns =
         walk(posts).filter(path -> path.getFileName().toString().endsWith(".md"))
-                   .collect(toMap(unsafeIO(path -> getLastModifiedTime(path)),
+                   .collect(toMap(unsafeFun(path -> getLastModifiedTime(path)),
                                   identity(),
                                   (a, b) -> { throw new AssertionError(); },
                                   TreeMap::new));
     
-    String index = Template.page(unsafeIO(() -> {
-      StringBuilder indexBuilder = new StringBuilder();
-      String feed = Template.RSSfeed(unsafeIO(() -> {
-        StringBuilder itemBuilder = new StringBuilder();
-        markdowns.forEach(unsafeIO((time, path) -> {
+    String index = Template.page(unsafeProc(indexBuilder -> {
+      String feed = Template.RSSfeed(unsafeProc(itemBuilder -> {
+        markdowns.forEach(unsafeProc((time, path) -> {
           HashSet<String> tags = new HashSet<>();
         
           RootNode root = processor.parseMarkdown(lines(path).peek(line -> populate(line, allTags, tags)).collect(joining("\n")).toCharArray());
@@ -73,18 +69,16 @@ public class Main {
           }
           String title = components[4].replace('_', ' ');
           LocalDate date = LocalDate.parse(components[0] + '-'+ components[1] + '-' + components[2]);
-          String page = Template.page(() -> 
-            Template.article(title, tags, date, components[3], filename, () -> content));
+          String page = Template.page(builder -> 
+            builder.append(Template.article(title, tags, date, components[3], filename, () -> content)));
           write(site.resolve(filename + ".html"), asList(page));
           System.out.println(filename + " written with tags " + tags);
-        
+          
           indexBuilder.append(Template.article(title, tags, date, null, filename, () -> Summary.summary(root, true)));
           itemBuilder.append(Template.RSSItem(title, Summary.summary(root, false), date, filename));
         }));
-        return itemBuilder.toString();
       }));
       write(site.resolve("rss.xml"), asList(feed));
-      return indexBuilder.toString();
     }));
     write(site.resolve("index.html"), asList(index));
   }

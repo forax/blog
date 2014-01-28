@@ -7,10 +7,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.HashSet;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 class Template {
-  static String page(Supplier<String> content) {
+  private static String accept(Consumer<StringBuilder> consumer) {
+    StringBuilder builder = new StringBuilder();
+    consumer.accept(builder);
+    return builder.toString();
+  }
+  
+  static String page(Consumer<StringBuilder> consumer) {
     return of(
   "<!DOCTYPE html>",
   "<html>",
@@ -38,7 +45,7 @@ class Template {
   "      <div id='main' class='site-main'>",
   "        <div id='primary' class='content-area'>",
   "          <div id='content' class='site-content' role='main'>",
-               content.get(),
+                accept(consumer),
   "          </div><!-- #content -->",
   "        </div><!-- #primary -->",
   "      </div><!-- #main -->",
@@ -93,7 +100,7 @@ class Template {
     ).collect(joining("\n"));
   }
   
-  static String RSSfeed(Supplier<String> content) {
+  static String RSSfeed(Consumer<StringBuilder> consumer) {
     String now = LocalDate.now().atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     return of(
   "<?xml version='1.0' encoding='UTF-8' ?>",
@@ -105,7 +112,7 @@ class Template {
   "  <lastBuildDate>" + now + "</lastBuildDate>",
   "  <pubDate>" + now + "</pubDate>",
   "  <ttl>1800</ttl>",
-         content.get(),
+         accept(consumer),
   "</channel>",
   "</rss>"
     ).collect(joining("\n"));
