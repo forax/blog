@@ -92,4 +92,35 @@ class Template {
     "<script type='text/javascript'>fetchComments(" + gist + ");</script>": ""
     ).collect(joining("\n"));
   }
+  
+  static String RSSfeed(Supplier<String> content) {
+    String now = LocalDate.now().atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    return of(
+  "<?xml version='1.0' encoding='UTF-8' ?>",
+  "<rss version='2.0'>",
+  "  <channel>",
+  "  <title>Remi Forax's Blog</title>",
+  "  <description>Java, the JVM and stuff around</description>",
+  "  <link>http://forax.github.io</link>",
+  "  <lastBuildDate>" + now + "</lastBuildDate>",
+  "  <pubDate>" + now + "</pubDate>",
+  "  <ttl>1800</ttl>",
+         content.get(),
+  "</channel>",
+  "</rss>"
+    ).collect(joining("\n"));
+  }
+  
+  static String RSSItem(String title, String summary, LocalDate date, String permalink) {
+    String itemDate = date.atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    return of(
+  "    <item>",
+  "      <title>" + title + "</title>",
+  "      <description> " + summary + "</description>",
+  "      <link>http://forax.github.io/" + permalink + ".html</link>",
+  "      <guid>" + permalink + "</guid>",
+  "      <pubDate>" + itemDate + "</pubDate>",
+  "    </item>"
+          ).collect(joining("\n"));
+  }
 }

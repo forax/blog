@@ -6,12 +6,12 @@ import org.pegdown.ast.SuperNode;
 import org.pegdown.ast.TextNode;
 
 public class Summary {
-  static String summary(RootNode root) {
+  static String summary(RootNode root, boolean isHtml) {
     StringBuilder builder = new StringBuilder();
-    appendSummary(root, builder);
+    appendSummary(root, builder, isHtml);
     return builder.toString();
   }
-  private static boolean appendSummary(Node node, StringBuilder builder) {
+  private static boolean appendSummary(Node node, StringBuilder builder, boolean isHtml) {
     if (node instanceof TextNode) {
       String text = ((TextNode) node).getText();
       int index = text.indexOf('.');
@@ -25,12 +25,12 @@ public class Summary {
         builder.append("...");
         return true;
       }
-      builder.append("</br>");
+      builder.append(isHtml? "</br>": "\n");
       return false;
     }
     if (node instanceof SuperNode) {
       for(Node n: ((SuperNode)node).getChildren()) {
-        if (appendSummary(n, builder)) {
+        if (appendSummary(n, builder, isHtml)) {
           return true;
         }
       }

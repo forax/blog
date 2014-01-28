@@ -54,33 +54,38 @@ public class Main {
                                   (a, b) -> { throw new AssertionError(); },
                                   TreeMap::new));
     
-    String index = Template.page(() -> {
+    String index = Template.page(unsafeIO(() -> {
       StringBuilder indexBuilder = new StringBuilder();
-      markdowns.forEach(unsafeIO((time, path) -> {
-        HashSet<String> tags = new HashSet<>();
+      String feed = Template.RSSfeed(unsafeIO(() -> {
+        StringBuilder itemBuilder = new StringBuilder();
+        markdowns.forEach(unsafeIO((time, path) -> {
+          HashSet<String> tags = new HashSet<>();
         
-        RootNode root = processor.parseMarkdown(lines(path).peek(line -> populate(line, allTags, tags)).collect(joining("\n")).toCharArray());
-        String content = new ToHtmlSerializer(new LinkRenderer(), emptyMap()).toHtml(root);
-        String summary = Summary.summary(root);
+          RootNode root = processor.parseMarkdown(lines(path).peek(line -> populate(line, allTags, tags)).collect(joining("\n")).toCharArray());
+          String content = new ToHtmlSerializer(new LinkRenderer(), emptyMap()).toHtml(root);
+          
+          String pathname = path.getFileName().toString();
+          String filename = pathname.substring(0, pathname.length() - ".md".length());
+          String[] components = filename.split("-");
+          if (components.length != 5) {
+            System.err.println("wrong format: year-month-day-gist-title" + filename);
+            return;
+          }
+          String title = components[4].replace('_', ' ');
+          LocalDate date = LocalDate.parse(components[0] + '-'+ components[1] + '-' + components[2]);
+          String page = Template.page(() -> 
+            Template.article(title, tags, date, components[3], filename, () -> content));
+          write(site.resolve(filename + ".html"), asList(page));
+          System.out.println(filename + " written with tags " + tags);
         
-        String pathname = path.getFileName().toString();
-        String filename = pathname.substring(0, pathname.length() - ".md".length());
-        String[] components = filename.split("-");
-        if (components.length != 5) {
-          System.err.println("wrong format: year-month-day-gist-title" + filename);
-          return;
-        }
-        String title = components[4].replace('_', ' ');
-        LocalDate date = LocalDate.parse(components[0] + '-'+ components[1] + '-' + components[2]);
-        String page = Template.page(() -> 
-          Template.article(title, tags, date, components[3], filename, () -> content));
-        write(site.resolve(filename + ".html"), asList(page));
-        System.out.println(filename + " written with tags " + tags);
-        
-        indexBuilder.append(Template.article(title, tags, date, null, filename, () -> summary));
+          indexBuilder.append(Template.article(title, tags, date, null, filename, () -> Summary.summary(root, true)));
+          itemBuilder.append(Template.RSSItem(title, Summary.summary(root, false), date, filename));
+        }));
+        return itemBuilder.toString();
       }));
+      write(site.resolve("rss.xml"), asList(feed));
       return indexBuilder.toString();
-    });
+    }));
     write(site.resolve("index.html"), asList(index));
   }
 }
