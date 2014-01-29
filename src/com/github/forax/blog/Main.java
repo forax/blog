@@ -8,6 +8,8 @@ import static java.nio.file.Files.walk;
 import static java.nio.file.Files.write;
 import static java.nio.file.Paths.get;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Comparator.reverseOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Stream.of;
 import static java.util.stream.Collectors.joining;
@@ -15,7 +17,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.pegdown.Extensions.FENCED_CODE_BLOCKS;
 import static org.pegdown.Extensions.HARDWRAPS;
-import static java.util.Collections.emptyMap;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -50,7 +51,7 @@ public class Main {
                    .collect(toMap(unsafeFun(path -> getLastModifiedTime(path)),
                                   identity(),
                                   (a, b) -> { throw new AssertionError(); },
-                                  TreeMap::new));
+                                  () -> new TreeMap<>(reverseOrder())));
     
     String index = Template.page(unsafeProc(indexBuilder -> {
       String feed = Template.RSSfeed(unsafeProc(itemBuilder -> {
