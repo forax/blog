@@ -170,6 +170,7 @@ public default List<E> first(int size) {
 ```
 
 and the methods map and flatMap:
+[update: 29 jan 2014, thanks to Sebastian Millies that send me the correct code for flatMap]
 
 ```
 public default <F> List<F> map(Function<? super E, ? extends F> mapper) {
@@ -178,13 +179,11 @@ public default <F> List<F> map(Function<? super E, ? extends F> mapper) {
       List::nil);
 }
   
-public default <F> List<F> flatMap(Function<? super E, List<F>> mapper) {
+public default <F> List<F> flatMap(BiFunction<? super E, List<F>, List<F>> mapper) {
   return select(
-      (element, next) -> mapper.apply(element).select(
-                                        List::cons,
-                                        () -> next.flatMap(mapper)),
+      (element, next) -> mapper.apply(element, next.flatMap(mapper)),
       List::nil);
-}
+} 
 ```
 
 To summarize, Java 8 introduces the notion of functional interface, in order to type function which can be seen as a kind of hack to introduce the concept of function type and still keep the type system nominal.  This has the interesting consequence of bridging the gap between a curryfied function and an immutable class. Usually an immutable class has getters that publish its data while a curryfied function doesn't expose the values used when currying. If the abstract method of a functional interface is a high order function, it can publish the curryfied values. Moreover if the abstract method of a functional interface takes as parameter one functions by implementation of the abstract type, you get a nice encoding on any abstract data types.
