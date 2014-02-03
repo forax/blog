@@ -39,6 +39,15 @@ public class Main {
     PATTERN.splitAsStream(line).<String>map(String::toLowerCase).filter(allTags::contains).forEach(tags::add);
   }
   
+  private static LocalDate extractDate(Path path) {
+    String filename = path.getFileName().toString();
+    String[] components =  filename.split("-");
+    if (components.length != 5) {
+      throw new IllegalArgumentException("wrong format: year-month-day-gist-title" + filename);
+    }
+    return LocalDate.parse(components[0] + '-'+ components[1] + '-' + components[2]);
+  }
+  
   public static void main(String[] args) throws IOException {
     Path posts = get("posts");
     Path site = get("site");
@@ -46,16 +55,16 @@ public class Main {
     
     PegDownProcessor processor = new PegDownProcessor(HARDWRAPS|FENCED_CODE_BLOCKS);
     
-    Map<FileTime, Path> markdowns =
+    Map<LocalDate, Path> markdowns =
         walk(posts).filter(path -> path.getFileName().toString().endsWith(".md"))
-                   .collect(toMap(unsafeFun(path -> getLastModifiedTime(path)),
+                   .collect(toMap(Main::extractDate,
                                   identity(),
                                   (a, b) -> { throw new AssertionError(); },
                                   () -> new TreeMap<>(reverseOrder())));
     
     String index = Template.page(unsafeProc(indexBuilder -> {
       String feed = Template.RSSfeed(unsafeProc(itemBuilder -> {
-        markdowns.forEach(unsafeProc((time, path) -> {
+        markdowns.forEach(unsafeProc((date, path) -> {
           HashSet<String> tags = new HashSet<>();
         
           RootNode root = processor.parseMarkdown(lines(path).peek(line -> populate(line, allTags, tags)).collect(joining("\n")).toCharArray());
@@ -64,12 +73,9 @@ public class Main {
           String pathname = path.getFileName().toString();
           String filename = pathname.substring(0, pathname.length() - ".md".length());
           String[] components = filename.split("-");
-          if (components.length != 5) {
-            System.err.println("wrong format: year-month-day-gist-title" + filename);
-            return;
-          }
+          
           String title = components[4].replace('_', ' ');
-          LocalDate date = LocalDate.parse(components[0] + '-'+ components[1] + '-' + components[2]);
+          
           String page = Template.page(builder -> 
             builder.append(Template.article(title, tags, date, components[3], filename, () -> content)));
           write(site.resolve(filename + ".html"), asList(page));
