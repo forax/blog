@@ -117,7 +117,7 @@ interface List<E> {
 ```
   
 The implementation of nil() calls the runnable, and the implementation of cons() calls the consumer with the element and the rest of the list as parameter.
-Creating a list is know simpler:
+Creating a list is now simpler:
 
 ```
 List<Integer> list =
