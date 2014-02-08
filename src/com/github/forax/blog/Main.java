@@ -1,26 +1,26 @@
 package com.github.forax.blog;
 
+import static com.github.forax.blog.Summary.summary;
+import static com.github.forax.blog.Template.RSSItem;
+import static com.github.forax.blog.Template.RSSfeed;
+import static com.github.forax.blog.Template.article;
+import static com.github.forax.blog.Template.page;
 import static com.github.forax.blog.UnsafeIO.unsafeProc;
-import static com.github.forax.blog.UnsafeIO.unsafeFun;
-import static java.nio.file.Files.getLastModifiedTime;
+import static java.lang.System.out;
 import static java.nio.file.Files.lines;
 import static java.nio.file.Files.walk;
 import static java.nio.file.Files.write;
-import static java.nio.file.Paths.get;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.function.Function.identity;
-import static java.util.stream.Stream.of;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.pegdown.Extensions.FENCED_CODE_BLOCKS;
 import static org.pegdown.Extensions.HARDWRAPS;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,12 +49,11 @@ public class Main {
   }
   
   public static void main(String[] args) throws IOException {
-    Path posts = get("posts");
-    Path site = get("site");
-    Set<String> allTags = of("java", "jvm", "lambda").collect(toSet());
+    Path posts = Config.POSTS;
+    Path site = Config.SITE;
+    HashSet<String> allTags = new HashSet<>(asList(Config.TAGS));
     
     PegDownProcessor processor = new PegDownProcessor(HARDWRAPS|FENCED_CODE_BLOCKS);
-    
     Map<LocalDate, Path> markdowns =
         walk(posts).filter(path -> path.getFileName().toString().endsWith(".md"))
                    .collect(toMap(Main::extractDate,
@@ -62,8 +61,8 @@ public class Main {
                                   (a, b) -> { throw new AssertionError(); },
                                   () -> new TreeMap<>(reverseOrder())));
     
-    String index = Template.page(unsafeProc(indexBuilder -> {
-      String feed = Template.RSSfeed(unsafeProc(itemBuilder -> {
+    String main = page(unsafeProc(index -> {
+      String feed = RSSfeed(unsafeProc(item -> {
         markdowns.forEach(unsafeProc((date, path) -> {
           HashSet<String> tags = new HashSet<>();
         
@@ -76,17 +75,17 @@ public class Main {
           
           String title = components[4].replace('_', ' ');
           
-          String page = Template.page(builder -> 
-            builder.append(Template.article(title, tags, date, components[3], filename, () -> content)));
+          String page = page(builder -> 
+            builder.append(article(title, tags, date, components[3], filename, () -> content)));
           write(site.resolve(filename + ".html"), asList(page));
-          System.out.println(filename + " written with tags " + tags);
+          out.println(filename + " written with tags " + tags);
           
-          indexBuilder.append(Template.article(title, tags, date, null, filename, () -> Summary.summary(root, true)));
-          itemBuilder.append(Template.RSSItem(title, Summary.summary(root, false), date, filename));
+          index.append(article(title, tags, date, null, filename, () -> summary(root, true)));
+          item.append(RSSItem(title, summary(root, false), date, filename));
         }));
       }));
       write(site.resolve("rss.xml"), asList(feed));
     }));
-    write(site.resolve("index.html"), asList(index));
+    write(site.resolve("index.html"), asList(main));
   }
 }

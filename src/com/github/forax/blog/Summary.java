@@ -5,12 +5,19 @@ import org.pegdown.ast.RootNode;
 import org.pegdown.ast.SuperNode;
 import org.pegdown.ast.TextNode;
 
+/**
+ *  Extract a summary of a text in markdown by extracting either the first 128 characters
+ *  or the first sentence (that stop with a '.').
+ */
 public class Summary {
+  private static final int MAX_LENGTH = 128;
+  
   static String summary(RootNode root, boolean isHtml) {
     StringBuilder builder = new StringBuilder();
     appendSummary(root, builder, isHtml);
     return builder.toString();
   }
+  
   private static boolean appendSummary(Node node, StringBuilder builder, boolean isHtml) {
     if (node instanceof TextNode) {
       String text = ((TextNode) node).getText();
@@ -20,8 +27,8 @@ public class Summary {
         return true;
       }
       builder.append(text);
-      if (builder.length() > 128) {
-        builder.setLength(128);
+      if (builder.length() > MAX_LENGTH) {
+        builder.setLength(MAX_LENGTH);
         builder.append("...");
         return true;
       }
@@ -37,5 +44,4 @@ public class Summary {
     }
     return false;
   }
-  
 }

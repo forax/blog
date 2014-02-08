@@ -90,9 +90,7 @@ class Template {
   "      </time>",
   "    </span>",
   "    <span class='categories-links'>",
-         tags.stream().<String>flatMap(tag -> of(
-             tag
-         )).collect(joining("\n")),
+         tags.stream().collect(joining("\n")),
   "    </span>",
   "  </div><!-- .entry-meta -->",
   "</header><!-- .entry-header -->",
@@ -109,12 +107,12 @@ class Template {
   "   <span id='comments'/>",
   "</footer><!-- .entry-meta -->",
   "</article><!-- #post -->",
-  (gist != null)?
-      "<script type='text/javascript' src='assets/markdown.min.js'></script>": "",
-  (gist != null)?
-      "<script type='text/javascript' src='assets/ajax.js'></script>": "",
-  (gist != null)?
-    "<script type='text/javascript'>fetchComments(" + gist + ");</script>": ""
+    (gist != null)?
+  "<script type='text/javascript' src='assets/markdown.min.js'></script>": "",
+    (gist != null)?
+  "<script type='text/javascript' src='assets/ajax.js'></script>": "",
+    (gist != null)?
+  "<script type='text/javascript'>fetchComments(" + gist + ");</script>": ""
     ).collect(joining("\n"));
   }
   
